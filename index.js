@@ -65,27 +65,31 @@ client.on('message', msg => {
         //players
         }else if (playersCommand.test(msg.content)) {
             $.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function (status) {
-                //Show the version
-                console.log(status.version);
-
-                //Show a list of players
-                var playerList;
-                if (status.players.online > 1) {
-                    playerList = status.players.online + " people are currently playing: ";
-                } else if (status.players.online === 1) {
-                    playerList = status.players.online + " person is currently playing: ";
+                if(status.online === false){
+                    msg.reply("The server is currently down. Please refer to any announcements regarding the status of the server");
                 } else {
-                    playerList = "no one is playing :("
+                    //Show the version
+                    console.log(status.version);
+
+                    //Show a list of players
+                    var playerList;
+                    if (status.players.online > 1) {
+                        playerList = status.players.online + " people are currently playing: ";
+                    } else if (status.players.online === 1) {
+                        playerList = status.players.online + " person is currently playing: ";
+                    } else {
+                        playerList = "no one is playing :("
+                    }
+                    $.each(status.players.list, function (index, player) {
+                        console.log(player);
+                        playerList += player + " ";
+                    });
+
+                    msg.reply(playerList);
                 }
-                $.each(status.players.list, function (index, player) {
-                    console.log(player);
-                    playerList += player + " ";
-                });
-
-                msg.reply(playerList);
             });
-
-            //Set Server IP
+            
+        //Set Server IP
         }else if (setServerIPCommand.test(msg.content)) {
             if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')){
                 serverIP = msg.content.split(" ")[1];
