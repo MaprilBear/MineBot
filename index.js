@@ -50,13 +50,16 @@ client.on('message', msg => {
     if(msg.author === client.user){}else {
 
         if(helpCommand.test(msg.content)){
+            var msgToSend = '';
+            msg.author.createDM();
+            //Admins
             if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')){
-                msg.author.createDM();
-                msg.author.send("!setserverip [serverip] to set server ip")
+                msgToSend += "!setserverip [serverip] to set server ip";
             }
-                msg.author.createDM();
-                msg.author.send("!players to list all online players \n" +
-                                "!serverip to get server IP");
+            //Normal
+                msgToSend +="\n!players to list all online players \n" +
+                                "!serverip to get server IP";
+            msg.author.send(msgToSend);
             
 
         //players
