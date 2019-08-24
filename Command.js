@@ -1,11 +1,11 @@
 class Command{
-    constructor(name, prefix, fun){
-        this.regex = new RegExp(prefix + name);
+    constructor(name, fun){
+        this.regex = new RegExp(name);
         this.runFunction = fun;
     }
 
     onCall(msg){ this.runFunction(msg); }
-    getRegex(){ return this.regex; }
+    getRegex(prefix){ return RegExp(prefix + this.regex.source); }
 }
 
 

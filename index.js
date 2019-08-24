@@ -4,10 +4,11 @@ const {JSDOM} = require("jsdom");
 const { window } = new JSDOM();
 const $ = require('jquery')(window);
 const Discord = require('discord.js');
-const client = new Discord.Client();
+const DiscordClient = new Discord.Client();
 const token = process.argv[2];
+const MongoClient = require('mongodb').MongoClient;
 var ip = "66.235.174.205:25580";
-var prefix = "%";
+var prefix;
 var helpText =
     "General:\n" +
     "- %player - lists all players connected to the server\n" +
@@ -16,51 +17,76 @@ var helpText =
     "Administrative:\n" +
     "- %setip - changes the server's ip address (You must set this value before using any commands that require a server to be set)";
 
+//MongoDB
+const uri = process.argv[3];
+var DirtDB;
+const mongoClient = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoClient.close();
+mongoClient.connect( function(err, db) {
+    if (err) throw err;
+    DirtDB = mongoClient.db("DirtDB");
+});
+
+
 //Commands
-const helpCommand = new Command("help", prefix, help);
-function help(msg){
+const helpCommand = new Command("help", function (msg) {
     msg.author.createDM();
     msg.author.send(helpText);
 
-}
+});
 
-const playersCommand = new Command("players", prefix, players);
-function players(msg) {
-    $.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function (status) {
+const statusCommand = new Command("status", function (msg) {
+    console.log(ip);
+    $.getJSON('https:/api.mcsrvstat.us/2/' + ip, function (status) {
         if(status.online === false){
-            msg.reply("The server is currently down. Please refer to any announcements regarding the status of the server");
+            msg.reply("The server is currently offline :x:. Please refer to any announcements regarding the status of the server");
         } else {
             //Show a list of players
             var playerList;
             if (status.players.online > 1) {
-                playerList = status.players.online + " people are currently playing: ";
+                playerList = status.players.online + " players connected: ";
             } else if (status.players.online === 1) {
-                playerList = status.players.online + " person is currently playing: ";
+                playerList = status.players.online + " player connected: ";
             } else {
-                playerList = "no one is playing :("
+                playerList = "0 players connected "
             }
             $.each(status.players.list, function (index, player) {
                 console.log(player);
                 playerList += player + " ";
             });
 
-            msg.reply(playerList);
+            //Show a list of plugins
+            /*var pluginListRaw = status.plugins.names;
+            var pluginListClean = "";
+            for (let x in pluginListRaw){
+                pluginListClean += x + " ";
+            }
+
+             */
+
+            msg.reply("The server is ONLINE :white_check_mark: running version " + status.version + " with " + playerList);
         }
     });
-}
+});
 
-const setServerIPCommand = new InputCommand("setip", prefix, setServerIP);
-function setServerIP(msg) {
+const setServerIPCommand = new InputCommand("setip", function (msg) {
     if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')){
-        ip = msg.content.split(" ")[1];
-        msg.reply("server IP set to " + ip);
+        var newIP = msg.content.split(" ")[1];
+        this.ip = newIP;
+        DirtDB.collection("Settings").findOne({serverid: msg.guild.id}, function (err, result) {
+            console.log(result);
+            result.ip = newIP;
+            DirtDB.collection('Settings').replaceOne({serverid: msg.guild.id}, result);
+        });
+        msg.reply("server IP set to " + newIP);
+    } else {
+        msg.reply("You lack the required permissions to execute this command")
     }
-}
+});
 
-const serverIPCommand = new Command("ip", prefix, function (){});
+const serverIPCommand = new Command("ip", function (){});
 
-const motdCommand = new Command("motd", prefix, motd);
-function motd(msg){
+const motdCommand = new Command("motd", function(msg){
     $.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function(status) {
         if (status.motd.clean[1] === undefined){
             msg.reply(status.motd.clean[0]);
@@ -68,58 +94,92 @@ function motd(msg){
             msg.reply(status.motd.clean[0] + " " + status.motd.clean[1]);
         }
     });
-}
+});
+
+const setPrefixCommand = new Command('setprefix', function (msg) {
+    if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')){
+        var newPrefix = msg.content.split(" ")[1];
+        console.log(newPrefix);
+        this.prefix = newPrefix;
+        DirtDB.collection("Settings").findOne({serverid: msg.guild.id}, function (err, result) {
+            if (err) throw err;
+            result.prefix = newPrefix;
+            DirtDB.collection('Settings').replaceOne({serverid: msg.guild.id}, result, function(err, result){
+                if (err) throw err;
+                console.log("prefix changed");
+                msg.reply("MineBot's prefix has been changed to " + newPrefix);
+            });
+        })
+    } else {
+        msg.reply("You lack the required permissions to execute this command")
+    }
+});
 
 //End of Commands
 
 var started = false;
 
 function setPresence() {
-    client.user.setActivity(prefix + ' & Made By MaprilApril', {type: 'LISTENING'});
+    DiscordClient.user.setActivity(prefix + ' & Made By MaprilApril', {type: 'LISTENING'});
 }
 
 //Startup
-client.on('ready', () => {
+DiscordClient.on('ready', () => {
     started = true;
-    console.log(`Logged in as ${client.user.tag}!`);
+    console.log(`Logged in as ${DiscordClient.user.tag}!`);
     setPresence();
 });
 
+DiscordClient.on('guildCreate', guild =>{
+    DirtDB.collection("Settings").insertOne({serverid: guild.id, prefix: '%', serverip: ''});
+});
+
 //Message Received
-client.on('message', msg => {
+DiscordClient.on('message', msg => {
+
 
     //Check for commands
-    if(msg.author === client.user){}else {
+    if(msg.author === DiscordClient.user){}else {
 
-        //Help
-        if(helpCommand.getRegex().test(msg.content)){
-            console.log("help");
-            helpCommand.onCall(msg);
+        console.log(msg.guild.id);
 
-        //Players
-        } else if (playersCommand.getRegex().test(msg.content)) {
-            console.log("players");
-            playersCommand.onCall(msg);
+        //Connect to Mongo and setup ip and prefix
+        DirtDB.collection("Settings").findOne({serverid: msg.guild.id}, function (err, result) {
+            this.prefix = result.prefix;
+            this.ip = result.ip;
+            console.log(this.prefix);
+            console.log(this.ip);
 
-        //Set Server IP
-        }else if (setServerIPCommand.getRegex().test(msg.content)) {
-            console.log("setServer");
-            setServerIPCommand.onCall(msg);
+            if (helpCommand.getRegex(this.prefix).test(msg.content)) {
+                console.log("help");
+                helpCommand.onCall(msg);
 
-        //ServerIP
-        } else if (serverIPCommand.getRegex().test(msg.content)) {
-            console.log("serverIP");
-            msg.reply(ip);
+                //Players
+            } else if (statusCommand.getRegex(this.prefix).test(msg.content)) {
+                console.log("status");
+                statusCommand.onCall(msg);
 
-        //MOTD
-        } else if (motdCommand.getRegex().test(msg.content)){
-            console.log("motd");
-            motdCommand.onCall(msg);
-        }
+                //Set Server IP
+            } else if (setServerIPCommand.getRegex(this.prefix).test(msg.content)) {
+                console.log("setServer");
+                setServerIPCommand.onCall(msg);
 
+                //ServerIP
+            } else if (serverIPCommand.getRegex(this.prefix).test(msg.content)) {
+                console.log("serverIP");
+                msg.reply(ip);
+
+                //MOTD
+            } else if (motdCommand.getRegex(this.prefix).test(msg.content)) {
+                console.log("motd");
+                motdCommand.onCall(msg);
+            } else if (setPrefixCommand.getRegex(this.prefix).test(msg.content)) {
+                console.log("setprefix");
+                setPrefixCommand.onCall(msg);
+            }
+        })
     }
 
 });
 
-client.login(token);
-
+DiscordClient.login(token);
