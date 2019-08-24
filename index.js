@@ -24,27 +24,36 @@ function help(msg){
 
 }
 
-const playersCommand = new Command("players", prefix, players);
+const statusCommand = new Command("status", prefix, players);
 function players(msg) {
     $.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function (status) {
         if(status.online === false){
-            msg.reply("The server is currently down. Please refer to any announcements regarding the status of the server");
+            msg.reply("The server is currently offline :x:. Please refer to any announcements regarding the status of the server");
         } else {
             //Show a list of players
             var playerList;
             if (status.players.online > 1) {
-                playerList = status.players.online + " people are currently playing: ";
+                playerList = status.players.online + " players connected: ";
             } else if (status.players.online === 1) {
-                playerList = status.players.online + " person is currently playing: ";
+                playerList = status.players.online + " player connected: ";
             } else {
-                playerList = "no one is playing :("
+                playerList = "0 players connected "
             }
             $.each(status.players.list, function (index, player) {
                 console.log(player);
                 playerList += player + " ";
             });
 
-            msg.reply(playerList);
+            //Show a list of plugins
+            /*var pluginListRaw = status.plugins.names;
+            var pluginListClean = "";
+            for (let x in pluginListRaw){
+                pluginListClean += x + " ";
+            }
+
+             */
+
+            msg.reply("The server is ONLINE :white_check_mark: running version " + status.version + " with " + playerList + "running " + status.software);
         }
     });
 }
@@ -72,6 +81,10 @@ function motd(msg){
 
 //End of Commands
 
+$.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function(status) {
+    console.log(status)
+});
+
 var started = false;
 
 function setPresence() {
@@ -97,9 +110,9 @@ client.on('message', msg => {
             helpCommand.onCall(msg);
 
         //Players
-        } else if (playersCommand.getRegex().test(msg.content)) {
-            console.log("players");
-            playersCommand.onCall(msg);
+        } else if (statusCommand.getRegex().test(msg.content)) {
+            console.log("status");
+            statusCommand.onCall(msg);
 
         //Set Server IP
         }else if (setServerIPCommand.getRegex().test(msg.content)) {
