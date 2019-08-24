@@ -9,12 +9,12 @@ const token = process.argv[2];
 var ip = "66.235.174.205:25580";
 var prefix = "%";
 var helpText =
-    "General:\n\n" +
-    "%player - lists all players connected to the server\n" +
-    "%ip - returns the server's IP address\n" +
+    "General:\n" +
+    "-%player - lists all players connected to the server\n" +
+    "-%ip - returns the server's IP address\n" +
     "\n" +
-    "Administrative\n\n" +
-    "%setip - changes the server's ip address (You must set this value before using any commands that require a server to be set)";
+    "Administrative:\n" +
+    "-%setip - changes the server's ip address (You must set this value before using any commands that require a server to be set)";
 
 //Commands
 
@@ -63,9 +63,6 @@ const helpCommand = new Command("help", prefix, help);
 const playersCommand = new Command("players", prefix, players);
 const setServerIPCommand = new InputCommand("setip", prefix, setServerIP);
 const serverIPCommand = new Command("ip", prefix, function (){});
-
-
-console.log(helpCommand.getRegex());
 
 //End of Commands
 
