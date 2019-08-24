@@ -17,21 +17,19 @@ var helpText =
     "- %setip - changes the server's ip address (You must set this value before using any commands that require a server to be set)";
 
 //Commands
-
+const helpCommand = new Command("help", prefix, help);
 function help(msg){
     msg.author.createDM();
     msg.author.send(helpText);
 
 }
 
+const playersCommand = new Command("players", prefix, players);
 function players(msg) {
     $.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function (status) {
         if(status.online === false){
             msg.reply("The server is currently down. Please refer to any announcements regarding the status of the server");
         } else {
-            //Show the version
-            console.log(status.version);
-
             //Show a list of players
             var playerList;
             if (status.players.online > 1) {
@@ -51,7 +49,7 @@ function players(msg) {
     });
 }
 
-
+const setServerIPCommand = new InputCommand("setip", prefix, setServerIP);
 function setServerIP(msg) {
     if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')){
         ip = msg.content.split(" ")[1];
@@ -59,10 +57,18 @@ function setServerIP(msg) {
     }
 }
 
-const helpCommand = new Command("help", prefix, help);
-const playersCommand = new Command("players", prefix, players);
-const setServerIPCommand = new InputCommand("setip", prefix, setServerIP);
 const serverIPCommand = new Command("ip", prefix, function (){});
+
+const motdCommand = new Command("motd", prefix, motd);
+function motd(msg){
+    $.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function(status) {
+        if (status.motd.clean[1] === undefined){
+            msg.reply(status.motd.clean[0]);
+        } else {
+            msg.reply(status.motd.clean[0] + " " + status.motd.clean[1]);
+        }
+    });
+}
 
 //End of Commands
 
@@ -104,6 +110,11 @@ client.on('message', msg => {
         } else if (serverIPCommand.getRegex().test(msg.content)) {
             console.log("serverIP");
             msg.reply(ip);
+
+        //MOTD
+        } else if (motdCommand.getRegex().test(msg.content)){
+            console.log("motd");
+            motdCommand.onCall(msg);
         }
 
     }

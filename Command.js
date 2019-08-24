@@ -5,8 +5,7 @@ class Command{
     }
 
     onCall(msg){ this.runFunction(msg); }
-    getRegex(){
-        console.log(this.regex);return this.regex; }
+    getRegex(){ return this.regex; }
 }
 
 
