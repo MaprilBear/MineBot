@@ -7,6 +7,7 @@ const client = new Discord.Client();
 const token = process.argv[2];
 var serverIP;
 var prefix = "%";
+var helpCommand;
 var playersCommand;
 var settingsCommand;
 var setServerIPCommand;
@@ -19,6 +20,7 @@ function setPresence(){
 }
 
 function regenRegExp(){
+    helpCommand = new RegExp(prefix + 'help');
     playersCommand = new RegExp(prefix + 'players');
     settingsCommand = new RegExp(prefix + 'settings');
     setServerIPCommand = new RegExp(prefix + 'setserverip');
@@ -47,9 +49,18 @@ client.on('message', msg => {
 
     if(msg.author === client.user){}else {
 
-        //console.log(setPrefixCommand.test(msg.content));
+        if(helpCommand.test(msg.content)){
+            if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')){
+                msg.author.createDM();
+                msg.author.send("!setserverip [serverip] to set server ip")
+            }
+                msg.author.createDM();
+                msg.author.send("!players to list all online players \n" +
+                                "!serverip to get server IP");
+            
+
         //players
-        if (playersCommand.test(msg.content)) {
+        }else if (playersCommand.test(msg.content)) {
             $.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function (status) {
                 //Show the version
                 console.log(status.version);
@@ -71,19 +82,15 @@ client.on('message', msg => {
                 msg.reply(playerList);
             });
 
-            //settings
-        } else if (settingsCommand.test(msg.content)) {
-            msg.reply(prefix + "setserverip [server ip] to set the server ip");
-
-            //setPrefix
-        } else if (setServerIPCommand.test(msg.content)) {
+            //Set Server IP
+        }else if (setServerIPCommand.test(msg.content)) {
             if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')){
                 serverIP = msg.content.split(" ")[1];
                 msg.reply("server IP set to " + serverIP);
             }
 
 
-            //serverIP
+            //ServerIP
         } else if (serverIPCommand.test(msg.content)) {
             msg.reply(serverIP);
         }
