@@ -4,8 +4,9 @@ const {JSDOM} = require("jsdom");
 const { window } = new JSDOM();
 const $ = require('jquery')(window);
 const Discord = require('discord.js');
-const client = new Discord.Client();
+const DiscordClient = new Discord.Client();
 const token = process.argv[2];
+const MongoClient = require('mongodb').MongoClient;
 var ip = "66.235.174.205:25580";
 var prefix = "%";
 var helpText =
@@ -16,17 +17,26 @@ var helpText =
     "Administrative:\n" +
     "- %setip - changes the server's ip address (You must set this value before using any commands that require a server to be set)";
 
+//MongoDB
+const uri = process.argv[3];
+const mongoClient = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+mongoClient.close();
+mongoClient.connect( function(err, db) {
+    if (err) throw err;
+});
+
 //Commands
-const helpCommand = new Command("help", prefix, help);
+const helpCommand = new Command("help", help);
 function help(msg){
     msg.author.createDM();
     msg.author.send(helpText);
 
 }
 
-const statusCommand = new Command("status", prefix, players);
+const statusCommand = new Command("status", players);
 function players(msg) {
-    $.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function (status) {
+    console.log(ip);
+    $.getJSON('https:/api.mcsrvstat.us/2/' + ip, function (status) {
         if(status.online === false){
             msg.reply("The server is currently offline :x:. Please refer to any announcements regarding the status of the server");
         } else {
@@ -58,17 +68,22 @@ function players(msg) {
     });
 }
 
-const setServerIPCommand = new InputCommand("setip", prefix, setServerIP);
+const setServerIPCommand = new InputCommand("setip", setServerIP);
 function setServerIP(msg) {
     if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')){
-        ip = msg.content.split(" ")[1];
-        msg.reply("server IP set to " + ip);
+        var newIP = msg.content.split(" ")[1];
+        mongoClient.db("DirtDB").collection("Settings").findOne({serverid: msg.guild.id}, function (err, result) {
+            console.log(result);
+            result.ip = newIP;
+            mongoClient.db("DirtDB").collection('Settings').replaceOne({serverid: msg.guild.id}, result);
+        });
+        msg.reply("server IP set to " + newIP);
     }
 }
 
-const serverIPCommand = new Command("ip", prefix, function (){});
+const serverIPCommand = new Command("ip", function (){});
 
-const motdCommand = new Command("motd", prefix, motd);
+const motdCommand = new Command("motd", motd);
 function motd(msg){
     $.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function(status) {
         if (status.motd.clean[1] === undefined){
@@ -81,51 +96,58 @@ function motd(msg){
 
 //End of Commands
 
-$.getJSON('https:/api.mcsrvstat.us/2/66.235.174.205:25580', function(status) {
-    console.log(status)
-});
-
 var started = false;
 
 function setPresence() {
-    client.user.setActivity(prefix + ' & Made By MaprilApril', {type: 'LISTENING'});
+    DiscordClient.user.setActivity(prefix + ' & Made By MaprilApril', {type: 'LISTENING'});
 }
 
 //Startup
-client.on('ready', () => {
+DiscordClient.on('ready', () => {
     started = true;
-    console.log(`Logged in as ${client.user.tag}!`);
+    console.log(`Logged in as ${DiscordClient.user.tag}!`);
     setPresence();
 });
 
-//Message Received
-client.on('message', msg => {
+//Message Received7
+DiscordClient.on('message', msg => {
+
 
     //Check for commands
-    if(msg.author === client.user){}else {
+    if(msg.author === DiscordClient.user){}else {
+
+        console.log(msg.guild.id);
+
+        //Connect to Mongo and setup ip and prefix
+        mongoClient.db("DirtDB").collection("Settings").findOne({serverid: msg.guild.id}, function (err, result) {
+            prefix = result.prefix;
+            ip = result.ip;
+            console.log(prefix);
+            console.log(ip);
+        });
 
         //Help
-        if(helpCommand.getRegex().test(msg.content)){
+        if(helpCommand.getRegex(prefix).test(msg.content)){
             console.log("help");
             helpCommand.onCall(msg);
 
         //Players
-        } else if (statusCommand.getRegex().test(msg.content)) {
+        } else if (statusCommand.getRegex(prefix).test(msg.content)) {
             console.log("status");
             statusCommand.onCall(msg);
 
         //Set Server IP
-        }else if (setServerIPCommand.getRegex().test(msg.content)) {
+        }else if (setServerIPCommand.getRegex(prefix).test(msg.content)) {
             console.log("setServer");
             setServerIPCommand.onCall(msg);
 
         //ServerIP
-        } else if (serverIPCommand.getRegex().test(msg.content)) {
+        } else if (serverIPCommand.getRegex(prefix).test(msg.content)) {
             console.log("serverIP");
             msg.reply(ip);
 
         //MOTD
-        } else if (motdCommand.getRegex().test(msg.content)){
+        } else if (motdCommand.getRegex(prefix).test(msg.content)){
             console.log("motd");
             motdCommand.onCall(msg);
         }
@@ -134,5 +156,4 @@ client.on('message', msg => {
 
 });
 
-client.login(token);
-
+DiscordClient.login(token);
