@@ -126,22 +126,26 @@ const whoIsCommand = new Command('whois', function (msg) {
     try {
         mojang.nameToUuid(msg.content.split(" ")[1], function (err, result) {
             if (result === null || result === undefined){
-                msg.reply("Invalid name (Misspelled or not registed");
+                msg.reply("Player does not exist");
             } else {
                 console.log("Name: " + result[0].name);
                 console.log("UUID: " + result[0].id);
 
                 DirtDB.collection('Players').findOne({uuid: result[0].id}, function (err, result) {
+                    if (result === null || result === undefined){
+                        msg.reply("Specified Player has not been registered");
+                    } else {
+                        var discordID = result.discordid;
+                        DiscordClient.fetchUser(discordID).then(r => msg.reply(r.tag));
 
-                    var discordID = result.discordid;
-                    DiscordClient.fetchUser(discordID).then(r => msg.reply(r.tag));
+                        //IF MENTIONS
+                        /*
+                        console.log("Discord ID: " + discordID);
+                        msg.reply("<@" + discordID + ">").then(sent => console.log(sent.mentions.users.array()[0].tag));
 
-                    //IF MENTIONS
-                    /*
-                    console.log("Discord ID: " + discordID);
-                    msg.reply("<@" + discordID + ">").then(sent => console.log(sent.mentions.users.array()[0].tag));
-
-                     */
+                         */
+                    }
+                    
 
                 })
             }
