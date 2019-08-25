@@ -4,7 +4,24 @@ class Command{
         this.runFunction = fun;
     }
 
-    onCall(msg){ this.runFunction(msg); }
+    onCall(msg) {
+
+        this.runFunction(msg).then(function (result) {
+            console.log(result);
+            console.log()
+        });
+        /*
+        var prom = new Promise(function newFunction(resolve, reject) {
+            var result = fun(msg);
+            resolve(result);
+        });
+        prom.then(function (value) {
+            console.log(value)
+        });
+
+         */
+    }
+
     getRegex(prefix){ return RegExp(prefix + this.regex.source); }
 }
 
