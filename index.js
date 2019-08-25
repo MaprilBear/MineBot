@@ -234,17 +234,18 @@ function setPresence() {
     DiscordClient.user.setActivity(' Made By MaprilApril', {type: 'LISTENING'});
 }
 
-//Startup
-DiscordClient.on('ready', () => {
 
+
+async function sweepMessages() {
+    console.log("PERFORMING ROUTINE MESSAGE CLEANING");
     Array.from(DiscordClient.channels.values()).forEach(function (channel, index, ar1) {
-        if (channel.type === 'text'){
+        if (channel.type === 'text') {
             async function f() {
                 return new Promise(function (resolve) {
                     var count = 0;
                     channel.fetchMessages().then(function (messages) {
                         messages.forEach(function (msg, index, ar2) {
-                            if (msg.author === DiscordClient.user){
+                            if (msg.author === DiscordClient.user) {
                                 console.log("Deleted message: " + msg.content);
                                 msg.delete();
                                 count++;
@@ -254,9 +255,20 @@ DiscordClient.on('ready', () => {
                     });
                 })
             }
-            f().then(console.log)
-       }
-   });
+
+            f().then(function (a) {
+                console.log(a + " messages deleted")
+            })
+        }
+    });
+}
+
+
+//Startup
+DiscordClient.on('ready', () => {
+
+    setInterval(sweepMessages, 600000);
+
 
 
     
