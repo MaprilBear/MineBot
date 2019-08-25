@@ -213,7 +213,7 @@ const registerCommand = new Command("register", function (msg) {
         } else {
             DirtDB.collection("Settings").findOne({discordid: msg.author.id}, function (err, result) {
                 if (result === null){
-                    DirtDB.collection("Players").insertOne({uuid: mojang.nameToUuid(msg.content.split(" ")[1]), discordid: msg.author.id}).then(function (err, result) {
+                    DirtDB.collection("Players").insertOne({uuid: mojang.nameToUuid(msg.content.split(" ")[1]), discordid: msg.author.id}, function (d) {
                         msg.reply("Your name has been successfully registered. If this was a mistake please contact this Bot's author Panda#4724");
                         resolve("REGISTER command: " + msg.content.split(" ")[1] + " registered to " + msg.author.tag);
                     })
