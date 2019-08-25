@@ -236,10 +236,34 @@ function setPresence() {
 
 //Startup
 DiscordClient.on('ready', () => {
+
+    Array.from(DiscordClient.channels.values()).forEach(function (channel, index, ar1) {
+        if (channel.type === 'text'){
+            async function f() {
+                return new Promise(function (resolve) {
+                    var count = 0;
+                    channel.fetchMessages().then(function (messages) {
+                        messages.forEach(function (msg, index, ar2) {
+                            if (msg.author === DiscordClient.user){
+                                console.log("Deleted message: " + msg.content);
+                                msg.delete();
+                                count++;
+                            }
+                        });
+                        resolve(count);
+                    });
+                })
+            }
+            f().then(console.log)
+       }
+   });
+
+
+    
     started = true;
     console.log(`Logged in as ${DiscordClient.user.tag}!`);
     setPresence();
-    console.log("Removed " + DiscordClient.sweepMessages(lifetime = Number(600)) + " messages");
+    //console.log("Removed " + DiscordClient.sweepMessages(1) + " messages");
     setInterval(function () {console.log("Removed " + DiscordClient.sweepMessages(lifetime = Number(600)) + " messages");}, 600000);
     console.log();
 });
