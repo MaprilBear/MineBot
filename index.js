@@ -194,7 +194,7 @@ DiscordClient.on('message', msg => {
 
             //register
             if(msg.channel.id === "610608225246511131"){
-                if (RegExp(prefix + "register .+")){
+                if (RegExp(prefix + "register .+").test(msg.content)){
                     DirtDB.collection("Settings").findOne({discordid: msg.author.id}, function (err, result) {
                         if (result === null){
                             DirtDB.collection("Settings").insertOne({uuid: mojang.nameToUuid(msg.content.split(" ")[1]), discordid: msg.author.id}, undefined, function () {
