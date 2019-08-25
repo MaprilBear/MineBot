@@ -30,9 +30,9 @@ mongoClient.connect( function(err, db) {
 
 //Commands
 const helpCommand = new Command("help", function (msg) {
-    msg.author.createDM();
-    msg.author.send(helpText);
-
+    msg.author.createDM(function () {
+        msg.author.send(helpText);
+    });
 });
 
 const statusCommand = new Command("status", function (msg) {
@@ -120,7 +120,7 @@ const setPrefixCommand = new Command('setprefix', function (msg) {
 var started = false;
 
 function setPresence() {
-    DiscordClient.user.setActivity(prefix + ' & Made By MaprilApril', {type: 'LISTENING'});
+    DiscordClient.user.setActivity(' Made By MaprilApril', {type: 'LISTENING'});
 }
 
 //Startup
@@ -141,41 +141,45 @@ DiscordClient.on('message', msg => {
     //Check for commands
     if(msg.author === DiscordClient.user){}else {
 
-        console.log(msg.guild.id);
+        console.log(msg.author.id);
 
         //Connect to Mongo and setup ip and prefix
         DirtDB.collection("Settings").findOne({serverid: msg.guild.id}, function (err, result) {
-            this.prefix = result.prefix;
-            this.ip = result.ip;
-            console.log(this.prefix);
-            console.log(this.ip);
+            prefix = result.prefix;
+            ip = result.ip;
+            console.log(prefix);
+            console.log(ip);
 
-            if (helpCommand.getRegex(this.prefix).test(msg.content)) {
+            if (helpCommand.getRegex(prefix).test(msg.content)) {
                 console.log("help");
                 helpCommand.onCall(msg);
 
                 //Players
-            } else if (statusCommand.getRegex(this.prefix).test(msg.content)) {
+            } else if (statusCommand.getRegex(prefix).test(msg.content)) {
                 console.log("status");
                 statusCommand.onCall(msg);
 
                 //Set Server IP
-            } else if (setServerIPCommand.getRegex(this.prefix).test(msg.content)) {
+            } else if (setServerIPCommand.getRegex(prefix).test(msg.content)) {
                 console.log("setServer");
                 setServerIPCommand.onCall(msg);
 
                 //ServerIP
-            } else if (serverIPCommand.getRegex(this.prefix).test(msg.content)) {
+            } else if (serverIPCommand.getRegex(prefix).test(msg.content)) {
                 console.log("serverIP");
                 msg.reply(ip);
 
                 //MOTD
-            } else if (motdCommand.getRegex(this.prefix).test(msg.content)) {
+            } else if (motdCommand.getRegex(prefix).test(msg.content)) {
                 console.log("motd");
                 motdCommand.onCall(msg);
-            } else if (setPrefixCommand.getRegex(this.prefix).test(msg.content)) {
+            } else if (setPrefixCommand.getRegex(prefix).test(msg.content)) {
                 console.log("setprefix");
                 setPrefixCommand.onCall(msg);
+            } else if(msg.author.id === "183958085763727360" && msg.content === "!@#forcequit"){
+                mongoClient.close(function () {
+                    process.exit(0);
+                })
             }
         })
     }
@@ -183,3 +187,11 @@ DiscordClient.on('message', msg => {
 });
 
 DiscordClient.login(token);
+
+
+process.on('SIGINT', function() {
+    console.log("Caught interrupt signal");
+    mongoClient.close(true, function () {
+        process.exit(0);
+    });
+});
