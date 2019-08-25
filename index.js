@@ -213,10 +213,20 @@ const registerCommand = new Command("register", function (msg) {
         } else {
             DirtDB.collection("Settings").findOne({discordid: msg.author.id}, function (err, result) {
                 if (result === null){
-                    DirtDB.collection("Players").insertOne({uuid: mojang.nameToUuid(msg.content.split(" ")[1]), discordid: msg.author.id}, function (d) {
-                        msg.reply("Your name has been successfully registered. If this was a mistake please contact this Bot's author Panda#4724");
-                        resolve("REGISTER command: " + msg.content.split(" ")[1] + " registered to " + msg.author.tag);
-                    })
+                    var UUID = mojang.nameToUuid(msg.content.split(" ")[1], function(err, result){
+                        if (result === null || result === undefined || result.length < 1){
+                            msg.reply("Player does not exist, (Possible Misstype)");
+                            resolve("REGISTER command FAILED: player does not exist")
+                        } else {
+                            DirtDB.collection("Players").insertOne({
+                                uuid: UUID,
+                                discordid: msg.author.id
+                            }).then(function () {
+                                msg.reply("Your name has been successfully registered. If this was a mistake please contact this Bot's author Panda#4724");
+                                resolve("REGISTER command: " + msg.content.split(" ")[1] + " registered to " + msg.author.tag);
+                            })
+                        }
+                    });
                 } else {
                     msg.reply('Your name has already been registered');
                     resolve("REGISTER command FAILED: already registered, deleted message");
