@@ -168,6 +168,8 @@ DiscordClient.on('ready', () => {
     started = true;
     console.log(`Logged in as ${DiscordClient.user.tag}!`);
     setPresence();
+    DiscordClient.sweepMessages(600);
+    setInterval(function () {DiscordClient.sweepMessages();}, 600000);
 });
 
 DiscordClient.on('guildCreate', guild =>{
