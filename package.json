@@ -13,6 +13,7 @@
     "discord.js": "^11.5.1",
     "jquery": "^3.4.1",
     "jsdom": "^15.1.1",
+    "mojang-api": "0.0.2",
     "nodemon": "^1.19.1"
   },
   "devDependencies": {
