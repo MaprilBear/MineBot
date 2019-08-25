@@ -197,7 +197,7 @@ DiscordClient.on('message', msg => {
                 if (RegExp(prefix + "register .+")){
                     DirtDB.collection("Settings").findOne({discordid: msg.author.id}, function (err, result) {
                         if (result === null){
-                            DirtDB.collection("Settings").insertOne({uuid: mojang.nameToUuid(msg.content.split(" ")[1].id), discordid: msg.author.id}, undefined, function () {
+                            DirtDB.collection("Settings").insertOne({uuid: mojang.nameToUuid(msg.content.split(" ")[1]), discordid: msg.author.id}, undefined, function () {
                                 msg.reply("Your name has been successfully registered. If this was a mistake please contact this Bot's author Panda#4724");
                             })
                         } else {
