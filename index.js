@@ -1,6 +1,5 @@
 const Command = require("./Command");
 const mojang = require('mojang-api');
-const InputCommand = require("./InputCommand");
 const {JSDOM} = require("jsdom");
 const { window } = new JSDOM();
 const $ = require('jquery')(window);
