@@ -125,7 +125,7 @@ const whoIsCommand = new Command('whois', function (msg) {
 
     try {
         mojang.nameToUuid(msg.content.split(" ")[1], function (err, result) {
-            if (result === null || result === undefined){
+            if (result === null || result === undefined || result.length < 1){
                 msg.reply("Player does not exist");
             } else {
                 console.log("Name: " + result[0].name);
@@ -145,7 +145,7 @@ const whoIsCommand = new Command('whois', function (msg) {
 
                          */
                     }
-                    
+
 
                 })
             }
