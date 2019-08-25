@@ -52,7 +52,7 @@ const statusCommand = new Command("status", function (msg) {
             } else if (status.players.online === 1) {
                 playerList = status.players.online + " player connected: ";
             } else {
-                playerList = "0 players connected "
+                playerList = "0 players connected  "
             }
             $.each(status.players.list, function (index, player) {
                 console.log(player);
@@ -168,6 +168,8 @@ DiscordClient.on('ready', () => {
     started = true;
     console.log(`Logged in as ${DiscordClient.user.tag}!`);
     setPresence();
+    console.log("Removed " + DiscordClient.sweepMessages(lifetime = Number(600)) + " messages");
+    setInterval(function () {console.log("Removed " + DiscordClient.sweepMessages(lifetime = Number(600)) + " messages");}, 600000);
 });
 
 DiscordClient.on('guildCreate', guild =>{
