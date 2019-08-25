@@ -207,7 +207,7 @@ DiscordClient.on('message', msg => {
                 } else {
                     if (!(msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins'))){
                         msg.author.createDM();
-                        msg.author.send("Registration channels are for registration only").then(msg => console.log("Sent Message " + msg.content + "to " + msg.channel.recipient.tag));
+                        msg.author.send("Registration channels are for registration only").then(msg => console.log("Sent Message to " + msg.channel.recipient.tag));
                         msg.delete();
                     }
                 }
