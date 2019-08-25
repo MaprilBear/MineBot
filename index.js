@@ -73,7 +73,7 @@ const statusCommand = new Command("status", function (msg) {
     });
 });
 
-const setServerIPCommand = new InputCommand("setip", function (msg) {
+const setServerIPCommand = new Command("setip", function (msg) {
     if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')){
         var newIP = msg.content.split(" ")[1];
         this.ip = newIP;
