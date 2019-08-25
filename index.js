@@ -73,7 +73,7 @@ const statusCommand = new Command("status", function (msg) {
     });
 });
 
-const setServerIPCommand = new InputCommand("setip", function (msg) {
+const setServerIPCommand = new Command("setip", function (msg) {
     if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')){
         var newIP = msg.content.split(" ")[1];
         this.ip = newIP;
@@ -133,7 +133,7 @@ const whoIsCommand = new Command('whois', function (msg) {
 
                 DirtDB.collection('Players').findOne({uuid: result[0].id}, function (err, result) {
                     if (result === null || result === undefined){
-                        msg.reply("Specified Player has not been registered");
+                        msg.reply("Specified Player has not been registered)");
                     } else {
                         var discordID = result.discordid;
                         DiscordClient.fetchUser(discordID).then(r => msg.reply(r.tag));
