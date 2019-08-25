@@ -218,6 +218,7 @@ const registerCommand = new Command("register", function (msg) {
                             msg.reply("Player does not exist, (Possible Misstype)");
                             resolve("REGISTER command FAILED: player does not exist")
                         } else {
+                            console.log(result[0]);
                             DirtDB.collection("Players").insertOne({
                                 uuid: result[0].id,
                                 discordid: msg.author.id
