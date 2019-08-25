@@ -193,18 +193,26 @@ DiscordClient.on('message', msg => {
             console.log(ip);
 
             //register
-            if(msg.channel.id === "610608225246511131" && RegExp(prefix + "register .+")){
-                DirtDB.collection("Settings").findOne({discordid: msg.author.id}, function (err, result) {
-                    if (result == null){
-                        DirtDB.collection("Settings").insertOne({uuid: mojang.nameToUuid(msg.content.split(" ")[1].id), discordid: msg.author.id}, undefined, function () {
-                            msg.reply("Your name has been successfully registered. If this was a mistake please contact this Bot's author Panda#4724");
-                        })
-                    } else {
-                        msg.reply('Your name has already been registered')
+            if(msg.channel.id === "610608225246511131"){
+                if (RegExp(prefix + "register .+")){
+                    DirtDB.collection("Settings").findOne({discordid: msg.author.id}, function (err, result) {
+                        if (result == null){
+                            DirtDB.collection("Settings").insertOne({uuid: mojang.nameToUuid(msg.content.split(" ")[1].id), discordid: msg.author.id}, undefined, function () {
+                                msg.reply("Your name has been successfully registered. If this was a mistake please contact this Bot's author Panda#4724");
+                            })
+                        } else {
+                            msg.reply('Your name has already been registered')
+                        }
+                    });
+                } else {
+                    if (!(msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins'))){
+                        msg.author.createDM().then(dm => msg.author.send("Registration channels are for registration only"));
+                        msg.reply("This channel is for registering names only");
+                        msg.delete();
                     }
-                });
-                msg.reply("This channel is for registering Minecraft usernames only");
-                msg.delete();
+                }
+
+
             }
 
             if (helpCommand.getRegex(prefix).test(msg.content)) {
