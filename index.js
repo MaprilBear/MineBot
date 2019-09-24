@@ -40,25 +40,33 @@ const helpCommand = new Command("help", function(msg){
 
 const statusCommand = new Command("status", function(msg){
     return new Promise(function (resolve) {
+
         $.getJSON('https:/api.mcsrvstat.us/2/' + ip, function (status) {
+
             if (status === null || status === undefined){
-                msg.reply("Could not connect to Minecraft API");
+                msg.channel.send("", new Discord.RichEmbed({
+                    color: 'RED',
+                    title: ip,
+                    description: 'Could not connect to Minecraft API'
+                }));
                 resolve("STATUS command FAILED: could not connect to API");
             }else if(status.online === false){
-                msg.reply("The server is currently offline :x:. Please refer to any announcements regarding the status of the server");
+                msg.channel.send("", new Discord.RichEmbed({
+                    title: ip,
+                    color: 'RED',
+                    description: 'The server is currently offline :x:. Please refer to any announcements regarding the status of the server'
+                }));
+                //msg.reply("The server is currently offline :x:. Please refer to any announcements regarding the status of the server");
                 resolve("STATUS command SUCCESS: OFFLINE");
             } else {
+                var embed = new Discord.RichEmbed();
+                embed.setColor('GREEN');
+                embed.setDescription(status.motd.clean[0]);
+                embed.setTitle(ip);
                 //Show a list of players
-                var playerList;
-                if (status.players.online > 1) {
-                    playerList = status.players.online + " players connected: ";
-                } else if (status.players.online === 1) {
-                    playerList = status.players.online + " player connected: ";
-                } else {
-                    playerList = "0 players connected  "
-                }
+                var playerList = '';
                 $.each(status.players.list, function (index, player) {
-                    playerList += player + ", ";
+                    playerList += player + "\n";
                 });
 
                 //Show a list of plugins
@@ -69,8 +77,13 @@ const statusCommand = new Command("status", function(msg){
                 }
 
                  */
-
-                msg.reply("The server is ONLINE :white_check_mark: running version " + status.version + " with " + playerList.substring(0, playerList.length - 2));
+                embed.addField('Version', status.version);
+                embed.addField('Online', 'Current: ```' + status.players.online + '``` \nMaximum: ```' + status.players.max + '``` ', true);
+                if (playerList.length > 0) {
+                    embed.addField('Players', playerList);
+                }
+                msg.channel.send("", embed);
+                //msg.reply("The server is ONLINE :white_check_mark: running version " + status.version + " with " + playerList.substring(0, playerList.length - 2));
                 resolve("STATUS command SUCCESS: ONLINE, Version: " + status.version + ", Players: " + playerList.substring(0, playerList.length - 2));
             }
         });
@@ -82,12 +95,13 @@ const setServerIPCommand = new Command("setip", function (msg) {
         if (msg.content.indexOf(" ") === -1) {
             msg.reply("Missing argument");
             resolve('SEIP command FAILED: missing argument');
-        } else if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins')) {
+        } else if (msg.member.roles.find(r => r.name === 'Owner' || msg.member.roles.find(r => r.name === 'Moderator')) || msg.member.roles.find(r => r.name === 'Admins') || msg.member.roles.find(r => r.name === 'MineBot')) {
             var newIP = msg.content.split(" ")[1];
             this.ip = newIP;
             DirtDB.collection("Settings").findOne({serverid: msg.guild.id}, function (err, result) {
                 console.log(result);
                 result.ip = newIP;
+                DirtDB.collection('Settings').replaceOne({serverid: msg.guild.id}, result);
                 DirtDB.collection('Settings').replaceOne({serverid: msg.guild.id}, result);
                 msg.reply("server IP set to " + newIP);
                 resolve("SETIP command SUCCESS: IP: " + newIP);
@@ -103,7 +117,10 @@ const setServerIPCommand = new Command("setip", function (msg) {
 
 const serverIPCommand = new Command("ip", function (msg){
     return new Promise(function (resolve) {
-        msg[0].reply(msg[1]);
+        var embed = new Discord.RichEmbed();
+        embed.setColor('GREEN');
+        embed.setTitle(msg[1]);
+        msg[0].channel.send("", embed);
         resolve("IP command SUCCESS: " + msg[1]);
     })
 });
@@ -236,7 +253,7 @@ function setPresence() {
 
 
 
-async function sweepMessages() {
+async function sweepMessages(lifetime) {
     console.log("PERFORMING ROUTINE MESSAGE CLEANING");
     Array.from(DiscordClient.channels.values()).forEach(function (channel, index, ar1) {
         if (channel.type === 'text') {
@@ -245,7 +262,7 @@ async function sweepMessages() {
                     var count = 0;
                     channel.fetchMessages().then(function (messages) {
                         messages.forEach(function (msg, index, ar2) {
-                            if (msg.author === DiscordClient.user) {
+                            if (msg.author === DiscordClient.user && (Date.now() - msg.createdAt.getMilliseconds()) > lifetime * 1000) {
                                 console.log("Deleted message: " + msg.content);
                                 msg.delete();
                                 count++;
@@ -257,7 +274,7 @@ async function sweepMessages() {
             }
 
             f().then(function (a) {
-                console.log(a + " messages deleted")
+                console.log(a + " messages deleted\n")
             })
         }
     });
@@ -266,17 +283,12 @@ async function sweepMessages() {
 
 //Startup
 DiscordClient.on('ready', () => {
-
-    setInterval(sweepMessages, 600000);
-
-
-
-    
+    setInterval(async function (){sweepMessages(3600)}, 600000);
     started = true;
     console.log(`Logged in as ${DiscordClient.user.tag}!`);
     setPresence();
     //console.log("Removed " + DiscordClient.sweepMessages(1) + " messages");
-    setInterval(function () {console.log("Removed " + DiscordClient.sweepMessages(lifetime = Number(600)) + " messages");}, 600000);
+
     console.log();
 });
 
@@ -372,6 +384,21 @@ process.on('SIGINT', function() {
         process.exit();
     });
 });
+
+process.on('SIGTERM', function() {
+    console.log("Caught interrupt signal");
+    mongoClient.close(true, function () {
+        process.exit();
+    });
+});
+
+process.on('exit', function() {
+    console.log("Caught interrupt signal");
+    mongoClient.close(true, function () {
+        process.exit();
+    });
+});
+
 
 
 
